@@ -1,8 +1,6 @@
-torch==2.2.1+cu121
-transformers==4.40.0
-sentencepiece==0.1.99
-datasets==2.19.0
-accelerate==0.29.3
+datasets==2.10.1
 evaluate==0.4.1
-nltk==3.8.1
-seqeval
+numpy==1.23.1
+pandas==1.4.1
+seqeval==1.2.2
+transformers==4.38.0

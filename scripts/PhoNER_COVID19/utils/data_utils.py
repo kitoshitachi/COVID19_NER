@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-import wandb
 
 import datasets
 from datasets import Dataset, DatasetDict

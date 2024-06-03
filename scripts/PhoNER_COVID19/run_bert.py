@@ -85,7 +85,7 @@ if __name__ == '__main__':
         os.makedirs(model_dir)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, do_lower_case=args.do_lower_case)
 
-    model = AutoModelForTokenClassification.from_pretrained(args.model_name, num_labels=len(label_list))
+    model = AutoModelForTokenClassification.from_pretrained(args.model_name, num_labels=len(label_list), ignore_mismatched_sizes=True)
     
     dataset_dict = process(args.data_dir, tokenizer, args.max_length)
     
