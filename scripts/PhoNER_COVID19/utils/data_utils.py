@@ -54,9 +54,9 @@ def sent_process(data_dir, tokenizer):
 
 def process(data_dir, tokenizer, max_length):
 
-    train_df = pd.read_json(os.path.join(data_dir, f'COVID19/train_word.json'), orient='records', lines=True).reset_index()
-    dev_df = pd.read_json(os.path.join(data_dir, f'COVID19/dev_word.json'), orient='records', lines=True).reset_index()
-    test_df = pd.read_json(os.path.join(data_dir, f'COVID19/test_word.json'), orient='records', lines=True).reset_index()
+    train_df = pd.read_json(os.path.join(data_dir, f'train_word.json'), orient='records', lines=True).reset_index()
+    dev_df = pd.read_json(os.path.join(data_dir, f'dev_word.json'), orient='records', lines=True).reset_index()
+    test_df = pd.read_json(os.path.join(data_dir, f'test_word.json'), orient='records', lines=True).reset_index()
 
     mapping_column_names = {
         'index': 'id',
