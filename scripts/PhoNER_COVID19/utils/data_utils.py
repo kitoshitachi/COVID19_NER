@@ -95,7 +95,8 @@ def process(data_dir, tokenizer, max_length):
 
     tokenized_train = train_ds.map(tokenize_and_align_labels, fn_kwargs={'tokenizer': tokenizer, 'max_length':max_length}, batched=True)
     tokenized_dev = dev_ds.map(tokenize_and_align_labels, fn_kwargs={'tokenizer': tokenizer, 'max_length': max_length}, batched=True)
-    tokenized_test = test_ds.map(tokenize_fn, fn_kwargs={'tokenizer': tokenizer, 'max_length': max_length}, batched=True)
+    # tokenized_test = test_ds.map(tokenize_fn, fn_kwargs={'tokenizer': tokenizer, 'max_length': max_length}, batched=True)
+    tokenized_test = test_ds.map(tokenize_and_align_labels, fn_kwargs={'tokenizer': tokenizer, 'max_length': max_length}, batched=True)
 
     tokenized_datasets = DatasetDict({
         'train': tokenized_train,

@@ -49,7 +49,7 @@ if __name__ == '__main__':
                         default=3e-5)
     parser.add_argument('--epochs',
                         type=int,
-                        default=10)
+                        default=5)
     parser.add_argument('--weight_decay',
                         type=float,
                         default=0.1)
@@ -64,13 +64,13 @@ if __name__ == '__main__':
                         default=3)
     parser.add_argument('--evaluation_strategy',
                         type=str,
-                        default='steps')
+                        default='epoch')
     parser.add_argument('--logging_strategy',
                         type=str,
-                        default='steps')
+                        default='epoch')
     parser.add_argument('--save_strategy',
                         type=str,
-                        default='steps')
+                        default='epoch')
     
     args = parser.parse_args()
     
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     trainer.train()
 
     dev_preds, dev_labels, dev_results = predict(trainer, dataset_dict['validation'])
-    dev_results.to_csv(os.path.join(model_dir, 'ner_results.csv'), index=False)
+    dev_results.to_csv(os.path.join(model_dir, 'dev_results.csv'), index=False)
     
     logger.info("***** Dev results IOB1 *****")
     logger.info(classification_report(dev_labels, dev_preds))
@@ -153,7 +153,7 @@ if __name__ == '__main__':
     logger.info(classification_report(dev_labels, dev_preds, scheme=IOB2))
 
     test_preds, test_labels, test_results = predict(trainer, dataset_dict['test'], inference=False)
-    test_results.to_csv(os.path.join(model_dir, 'ner_results.csv'), index=False)
+    test_results.to_csv(os.path.join(model_dir, 'test_results.csv'), index=False)
     
     logger.info("***** Test results IOB1 *****")
     logger.info(classification_report(test_labels, test_preds))
