@@ -17,6 +17,13 @@ from seqeval.metrics import classification_report
 from seqeval.scheme import IOB2
 
 if __name__ == '__main__':
+    os.environ["WANDB_PROJECT"]="vampire_hunter"
+
+    # save your trained model checkpoint to wandb
+    os.environ["WANDB_LOG_MODEL"]="true"
+
+    # turn off watch to log faster
+    os.environ["WANDB_WATCH"]="false"
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name',
                         type=str,
@@ -70,57 +77,53 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
 
     experiment_name = args.model_name.split('/')[-1]
+
+    logger = logging.Logger(__name__)
     model_dir = f'./experiments/{experiment_name}'
 
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
-    
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, do_lower_case=args.do_lower_case)
-    model = AutoModelForTokenClassification.from_pretrained(args.model_name, num_labels=len(label_list))
-    dataset_dict = None
-    dataset_dict = process(args.data_dir, tokenizer, args.max_length)
 
+    model = AutoModelForTokenClassification.from_pretrained(args.model_name, num_labels=len(label_list))
+    
+    dataset_dict = process(args.data_dir, tokenizer, args.max_length)
+    
     total_steps_epoch = len(dataset_dict['train']) // (args.batch_size * args.gradient_accumulation_steps)
     logging_steps = total_steps_epoch
     eval_steps = logging_steps
     save_steps = logging_steps
     load_best_model_at_end = True
-    folder_model = 'e' + str(args.epochs) + '_lr' + str(args.learning_rate)
+    # folder_model = 'e' + str(args.epochs) + '_lr' + str(args.learning_rate)
     output_dir = model_dir + '/results'
-    logging_dir = model_dir + '/results'
     # get best model through a metric
     metric_for_best_model = 'eval_f1'
     if metric_for_best_model == 'eval_f1':
         greater_is_better = True
     elif metric_for_best_model == 'eval_loss':
         greater_is_better = False
-
-    args_ = TrainingArguments(
+        
+    training_args = TrainingArguments(
         output_dir=output_dir,
+        report_to="wandb",
         learning_rate=args.learning_rate,
         per_device_train_batch_size=args.batch_size,
-        per_device_eval_batch_size=args.batch_size*2,
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
+        per_device_eval_batch_size=args.batch_size,
         num_train_epochs=args.epochs,
+        # warmup_ratio=args.warmup_ratio,
         weight_decay=args.weight_decay,
         warmup_steps=args.warmup_steps,
-        #warmup_ratio=warmup_ratio,
-        save_total_limit=args.save_total_limit,
-        logging_steps=logging_steps,
-        eval_steps=logging_steps,
-        load_best_model_at_end = load_best_model_at_end,
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        logging_strategy='epoch',
+        log_level="error",
         metric_for_best_model = metric_for_best_model,
         greater_is_better = greater_is_better,
+        load_best_model_at_end=True,
         gradient_checkpointing=False,
         do_train=True,
         do_eval=True,
-        evaluation_strategy=args.evaluation_strategy,
-        logging_dir=logging_dir,
-        logging_strategy=args.logging_strategy,
-        save_strategy=args.save_strategy,
-        save_steps=save_steps,
-        fp16=False,
-        push_to_hub=False,
+        disable_tqdm=False,
     )
 
     data_collator = DataCollatorForTokenClassification(tokenizer)
@@ -129,7 +132,7 @@ if __name__ == '__main__':
 
     trainer = Trainer(
         model,
-        args_,
+        training_args,
         train_dataset=dataset_dict["train"],
         eval_dataset=dataset_dict["validation"],
         data_collator=data_collator,

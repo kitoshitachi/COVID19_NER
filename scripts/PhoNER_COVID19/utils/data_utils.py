@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import wandb
 
 import datasets
 from datasets import Dataset, DatasetDict
@@ -106,7 +107,7 @@ def process(data_dir, tokenizer, max_length):
     return tokenized_datasets
 
 
-if __name__ == '__main__':
-    from transformers import AutoTokenizer
-    tokenizer = AutoTokenizer.from_pretrained('neuralmind/bert-base-portuguese-cased', do_lower_case=True, token='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')
-    print(process('D:/19521204\python\ABSAPT2024_Solutions\data', tokenizer, 256))
+# if __name__ == '__main__':
+#     from transformers import AutoTokenizer
+#     tokenizer = AutoTokenizer.from_pretrained('neuralmind/bert-base-portuguese-cased', do_lower_case=True, token='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')
+#     print(process('D:/19521204\python\ABSAPT2024_Solutions\data', tokenizer, 256))
