@@ -89,12 +89,8 @@ if __name__ == '__main__':
     
     dataset_dict = process(args.data_dir, tokenizer, args.max_length)
     
-    total_steps_epoch = len(dataset_dict['train']) // (args.batch_size * args.gradient_accumulation_steps)
-    logging_steps = total_steps_epoch
-    eval_steps = logging_steps
-    save_steps = logging_steps
     load_best_model_at_end = True
-    # folder_model = 'e' + str(args.epochs) + '_lr' + str(args.learning_rate)
+    
     output_dir = model_dir + '/results'
     # get best model through a metric
     metric_for_best_model = args.metric_for_best_model
@@ -115,8 +111,9 @@ if __name__ == '__main__':
         weight_decay=args.weight_decay,
         warmup_steps=args.warmup_steps,
         evaluation_strategy=args.evaluation_strategy,
-        save_strategy=args.save_strategy,
         logging_strategy=args.logging_strategy,
+        save_strategy=args.save_strategy,
+        save_total_limit = args.save_total_limit + 2,
         log_level="error",
         metric_for_best_model = metric_for_best_model,
         greater_is_better = greater_is_better,
@@ -124,7 +121,6 @@ if __name__ == '__main__':
         gradient_checkpointing=False,
         do_train=True,
         do_eval=True,
-        disable_tqdm=False,
     )
 
     data_collator = DataCollatorForTokenClassification(tokenizer)
