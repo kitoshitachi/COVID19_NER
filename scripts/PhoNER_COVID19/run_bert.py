@@ -150,8 +150,8 @@ if __name__ == '__main__':
     dev_report_1 = classification_report(dev_labels, dev_preds, zero_division=0, output_dict=True)
     dev_report_2 = classification_report(dev_labels, dev_preds, zero_division=0, output_dict=True, scheme=IOB2)
     
-    pd.DataFrame(dev_report_1).T.to_csv(output_dir + '/report_dev_IOB1.csv')
-    pd.DataFrame(dev_report_2).T.to_csv(output_dir + '/report_dev_IOB1.csv')
+    pd.DataFrame(dev_report_1).T.to_csv(model_dir + '/report_dev_IOB1.csv')
+    pd.DataFrame(dev_report_2).T.to_csv(model_dir + '/report_dev_IOB2.csv')
 
     test_preds, test_labels, test_results = predict(trainer, dataset_dict['test'], inference=False)
     test_results.to_csv(os.path.join(model_dir, 'test_results.csv'), index=False)
@@ -159,6 +159,6 @@ if __name__ == '__main__':
     test_report_1 = classification_report(test_labels, test_preds, zero_division=0, output_dict=True)
     test_report_2 = classification_report(test_labels, test_preds, zero_division=0, output_dict=True, scheme=IOB2)
 
-    pd.DataFrame(test_report_1).T.to_csv(output_dir + '/report_test_IOB1.csv')
-    pd.DataFrame(test_report_2).T.to_csv(output_dir + '/report_test_IOB2.csv')
+    pd.DataFrame(test_report_1).T.to_csv(model_dir + '/report_test_IOB1.csv')
+    pd.DataFrame(test_report_2).T.to_csv(model_dir + '/report_test_IOB2.csv')
     
