@@ -22,8 +22,8 @@ def _ready_for_metrics(predictions, labels) -> tuple[dict]:
         for prediction, label in zip(predictions, labels)
     ]
     
-    true_predictions = map(get_entities, true_predictions)
-    true_labels = map(get_entities, true_labels)
+    true_predictions = map(lambda x: '#'.join(get_entities(x)), true_predictions)
+    true_labels = map(lambda x: '#'.join(get_entities(x)), true_labels)
     
     return true_predictions, true_labels
 
@@ -39,9 +39,6 @@ def _compute_metrics(preds, golds):
         tp += len(gold_set & pred_set)  # True Positives
         fn += len(gold_set - pred_set)  # False Negatives
         fp += len(pred_set - gold_set)  # False Positives
-
-    tp, fn, fp, n_total
-
 
     precision = 0 if tp + fp == 0 else 1.*tp / (tp + fp)
     recall = 0 if tp + fn == 0 else 1.*tp / (tp + fn)
