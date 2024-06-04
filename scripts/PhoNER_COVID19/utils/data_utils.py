@@ -4,11 +4,12 @@ import pandas as pd
 import datasets
 from datasets import Dataset, DatasetDict
 
-def tokenize_and_align_labels(dataset_unaligned, tokenizer, max_length, label_all_tokens=False):
-    tokenized_inputs = tokenizer(dataset_unaligned["tokens"], truncation=True, is_split_into_words=True, max_length=512)
+def tokenize_and_align_labels(dataset_unaligned, tokenizer, max_length, label_all_tokens=False, use_fast = True):
+    tokenized_inputs = tokenizer(dataset_unaligned["tokens"], truncation=True, is_split_into_words=True, max_length=max_length)
     labels = []
     for i, label in enumerate(dataset_unaligned[f"ner_tags"]):
-        word_ids = tokenized_inputs.word_ids(batch_index=i)
+        
+        word_ids = tokenized_inputs.word_ids(batch_index=i) if use_fast else tokenizer.convert_tokens_to_ids(tokenized_inputs.tokens(batch_index=i))
         previous_word_idx = None
         label_ids = []
         for word_idx in word_ids:
@@ -51,7 +52,7 @@ def tokenize_fn(examples, tokenizer, max_length):
 def sent_process(data_dir, tokenizer):
     raise NotImplementedError
 
-def process(data_dir, tokenizer, max_length):
+def process(data_dir, tokenizer, max_length, use_fast):
 
     train_df = pd.read_json(os.path.join(data_dir, f'train_word.json'), orient='records', lines=True).reset_index()
     dev_df = pd.read_json(os.path.join(data_dir, f'dev_word.json'), orient='records', lines=True).reset_index()
@@ -86,7 +87,8 @@ def process(data_dir, tokenizer, max_length):
     
     dataset = dataset.map(ds_features.encode_example, features=ds_features)
 
-    tokenized_datasets = dataset.map(tokenize_and_align_labels, fn_kwargs={'tokenizer': tokenizer, 'max_length':max_length}, batched=True)
+    tokenized_datasets = dataset.map(tokenize_and_align_labels, 
+                fn_kwargs={'tokenizer': tokenizer, 'max_length':max_length, 'use_fast':use_fast}, batched=True)
 
     return tokenized_datasets
 

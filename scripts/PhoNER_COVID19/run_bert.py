@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name, do_lower_case=args.do_lower_case)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name, do_lower_case=args.do_lower_case, use_fast=args.use_fast, add_prefix_space=args.add_prefix_space)
 
     model = AutoModelForTokenClassification.from_pretrained(args.model_name, num_labels=len(label_list), ignore_mismatched_sizes=True)
     

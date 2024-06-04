@@ -52,4 +52,10 @@ def config():
     parser.add_argument('--metric_for_best_model',
                     type=str,
                     default='eval_f1')
+    
+    parser.add_argument('--use_fast',
+                action='store_false')
+    
+    parser.add_argument('--add_prefix_space',
+            action='store_true')
     return parser
