@@ -87,7 +87,7 @@ if __name__ == '__main__':
     dev_report_df.to_csv(model_dir + '/report_dev.csv')
     test_report = predict(trainer, dataset_dict['test'], inference=False)
     
-    test_report_df = pd.DataFrame(test_report, orient='index').T
+    test_report_df = pd.DataFrame.from_dict(test_report, orient='index').T
     
     print("=========== TEST REPORT 1 =============")
     print(test_report_df)
