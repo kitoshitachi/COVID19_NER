@@ -4,41 +4,44 @@ import pandas as pd
 import datasets
 from datasets import Dataset, DatasetDict
 
-def tokenize_and_align_labels_slow(examples, tokenizer, max_length, label_all_tokens=False):
+def tokenize_and_align_labels_slow(dataset_unaligned, tokenizer, max_length, label_all_tokens=False):
+
     tokenized_inputs = {"input_ids": [], "attention_mask": [], "labels": []}
 
-    for i, (tokens, labels) in enumerate(zip(examples["tokens"], examples["ner_tags"])):
-        word_ids = []
+    for i in range(len(dataset_unaligned["tokens"])):
+        tokens = dataset_unaligned["tokens"][i]
+        labels = dataset_unaligned["ner_tags"][i]
+
+        # Tokenize each word individually (required for slow tokenizers)
+        word_tokenized = [tokenizer.tokenize(word) for word in tokens]
+        word_ids = [tokenizer.convert_tokens_to_ids(subwords) for subwords in word_tokenized]
+        input_ids = [subword_id for word in word_ids for subword_id in word]  # Flatten
+
+        # Truncate if needed
+        if len(input_ids) > max_length:
+            input_ids = input_ids[:max_length]
+            word_ids = word_ids[:max_length]  # Truncate word IDs as well
+
+        # Create attention mask
+        attention_mask = [1] * len(input_ids)
+
+        # Align labels
         label_ids = []
-        current_word = 0
-
-        for word, label in zip(tokens, labels):
-            word_tokens = tokenizer.tokenize(word)
-            tokenized_inputs["input_ids"].append(tokenizer.convert_tokens_to_ids(word_tokens))
-            # Account for [CLS] and [SEP] with "- 100"
-            word_ids.extend([current_word] * (len(word_tokens)))
-            current_word += 1
-
-            # Labels
-            if label_all_tokens:
-                label_ids.extend([label] * len(word_tokens))
+        current_word_idx = 0
+        for word_idx in word_ids:
+            # Special tokens get -100
+            if isinstance(word_idx, list): 
+                label_ids.extend([-100] * len(word_idx))
             else:
-                label_ids.extend([label] + [-100] * (len(word_tokens) - 1))
+                label_ids.append(labels[current_word_idx])
+                if not label_all_tokens:
+                    label_ids.extend([-100] * (len(tokenizer.convert_ids_to_tokens(word_idx)) - 1)) 
+                current_word_idx += 1
 
-        # Add special tokens and truncate sequences to max_length
-        special_tokens_count = tokenizer.num_special_tokens_to_add()
-        if len(tokenized_inputs["input_ids"][-1]) > max_length - special_tokens_count:
-            tokenized_inputs["input_ids"][-1] = tokenized_inputs["input_ids"][-1][:(max_length - special_tokens_count)]
-            word_ids = word_ids[:(max_length - special_tokens_count)]
-            label_ids = label_ids[:(max_length - special_tokens_count)]
-
-        tokenized_inputs["input_ids"][-1] = tokenizer.build_inputs_with_special_tokens(tokenized_inputs["input_ids"][-1])
-        tokenized_inputs["attention_mask"].append(
-            [1] * len(tokenized_inputs["input_ids"][-1])
-        )
-        tokenized_inputs["labels"].append(
-            [-100] + label_ids + [-100]
-        )
+        # Add to the final dictionary
+        tokenized_inputs["input_ids"].append(input_ids)
+        tokenized_inputs["attention_mask"].append(attention_mask)
+        tokenized_inputs["labels"].append(label_ids)
 
     return tokenized_inputs
 
@@ -135,5 +138,5 @@ def process(data_dir, tokenizer, max_length, use_fast):
 
 if __name__ == '__main__':
     from transformers import AutoTokenizer
-    tokenizer = AutoTokenizer.from_pretrained('neuralmind/bert-base-portuguese-cased', do_lower_case=True, token='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')
-    print(process('D:/19521204\python\COVID19_NER\data\COVID19', tokenizer, 256))
+    tokenizer = AutoTokenizer.from_pretrained('vinai/phobert-base-v2', do_lower_case=True, token='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', use_fast = False)
+    print(process('D:/19521204\python\COVID19_NER\data\COVID19', tokenizer, 256, use_fast=False))
