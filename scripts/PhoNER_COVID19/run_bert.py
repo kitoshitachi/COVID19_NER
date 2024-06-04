@@ -1,6 +1,4 @@
 import os
-import wandb
-
 from utils.arguments import config
 from utils.data_utils import *
 from utils.eval_utils import *

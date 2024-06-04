@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 import evaluate
 from transformers import Trainer
