@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     model = AutoModelForTokenClassification.from_pretrained(args.model_name, num_labels=len(label_list), ignore_mismatched_sizes=True)
     
-    dataset_dict = process(args.data_dir, tokenizer, args.max_length)
+    dataset_dict = process(args.data_dir, tokenizer, args.max_length, args.use_fast)
     
     load_best_model_at_end = True
     
