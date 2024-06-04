@@ -1,6 +1,5 @@
 import os
 import argparse
-import logging
 
 from utils.data_utils import *
 from utils.eval_utils import *
@@ -72,13 +71,14 @@ if __name__ == '__main__':
                         type=str,
                         default='epoch')
     
+    parser.add_argument('--metric_for_best_model',
+                    type=str,
+                    default='eval_f1')
+    
     args = parser.parse_args()
     
-    logger = logging.getLogger(__name__)
-
     experiment_name = args.model_name.split('/')[-1]
 
-    logger = logging.Logger(__name__)
     model_dir = f'./experiments/{experiment_name}'
 
     if not os.path.exists(model_dir):
@@ -97,11 +97,12 @@ if __name__ == '__main__':
     # folder_model = 'e' + str(args.epochs) + '_lr' + str(args.learning_rate)
     output_dir = model_dir + '/results'
     # get best model through a metric
-    metric_for_best_model = 'eval_f1'
-    if metric_for_best_model == 'eval_f1':
-        greater_is_better = True
-    elif metric_for_best_model == 'eval_loss':
+    metric_for_best_model = args.metric_for_best_model
+    if metric_for_best_model == 'eval_loss':
         greater_is_better = False
+    else:
+        metric_for_best_model = 'eval_f1'
+        greater_is_better = True
         
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -113,9 +114,9 @@ if __name__ == '__main__':
         # warmup_ratio=args.warmup_ratio,
         weight_decay=args.weight_decay,
         warmup_steps=args.warmup_steps,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        logging_strategy='epoch',
+        evaluation_strategy=args.evaluation_strategy,
+        save_strategy=args.save_strategy,
+        logging_strategy=args.logging_strategy,
         log_level="error",
         metric_for_best_model = metric_for_best_model,
         greater_is_better = greater_is_better,
@@ -146,18 +147,18 @@ if __name__ == '__main__':
     dev_preds, dev_labels, dev_results = predict(trainer, dataset_dict['validation'])
     dev_results.to_csv(os.path.join(model_dir, 'dev_results.csv'), index=False)
     
-    logger.info("***** Dev results IOB1 *****")
-    logger.info(classification_report(dev_labels, dev_preds))
+    dev_report_1 = classification_report(dev_labels, dev_preds, zero_division=0, output_dict=True)
+    dev_report_2 = classification_report(dev_labels, dev_preds, zero_division=0, output_dict=True, scheme=IOB2)
     
-    logger.info("***** Dev results IOB2 *****")
-    logger.info(classification_report(dev_labels, dev_preds, scheme=IOB2))
+    pd.DataFrame(dev_report_1).T.to_csv(output_dir + '/report_dev_IOB1.csv')
+    pd.DataFrame(dev_report_2).T.to_csv(output_dir + '/report_dev_IOB1.csv')
 
     test_preds, test_labels, test_results = predict(trainer, dataset_dict['test'], inference=False)
     test_results.to_csv(os.path.join(model_dir, 'test_results.csv'), index=False)
     
-    logger.info("***** Test results IOB1 *****")
-    logger.info(classification_report(test_labels, test_preds))
-    
-    logger.info("***** Test results IOB2 *****")
-    logger.info(classification_report(test_labels, test_preds, scheme=IOB2))
+    test_report_1 = classification_report(test_labels, test_preds, zero_division=0, output_dict=True)
+    test_report_2 = classification_report(test_labels, test_preds, zero_division=0, output_dict=True, scheme=IOB2)
 
+    pd.DataFrame(test_report_1).T.to_csv(output_dir + '/report_test_IOB1.csv')
+    pd.DataFrame(test_report_2).T.to_csv(output_dir + '/report_test_IOB2.csv')
+    
