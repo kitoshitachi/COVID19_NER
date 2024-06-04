@@ -4,12 +4,49 @@ import pandas as pd
 import datasets
 from datasets import Dataset, DatasetDict
 
+def tokenize_and_align_labels_slow(examples, tokenizer, max_length, label_all_tokens=False):
+    tokenized_inputs = {"input_ids": [], "attention_mask": [], "labels": []}
+
+    for i, (tokens, labels) in enumerate(zip(examples["tokens"], examples["ner_tags"])):
+        word_ids = []
+        label_ids = []
+        current_word = 0
+
+        for word, label in zip(tokens, labels):
+            word_tokens = tokenizer.tokenize(word)
+            tokenized_inputs["input_ids"].append(tokenizer.convert_tokens_to_ids(word_tokens))
+            # Account for [CLS] and [SEP] with "- 100"
+            word_ids.extend([current_word] * (len(word_tokens)))
+            current_word += 1
+
+            # Labels
+            if label_all_tokens:
+                label_ids.extend([label] * len(word_tokens))
+            else:
+                label_ids.extend([label] + [-100] * (len(word_tokens) - 1))
+
+        # Add special tokens and truncate sequences to max_length
+        special_tokens_count = tokenizer.num_special_tokens_to_add()
+        if len(tokenized_inputs["input_ids"][-1]) > max_length - special_tokens_count:
+            tokenized_inputs["input_ids"][-1] = tokenized_inputs["input_ids"][-1][:(max_length - special_tokens_count)]
+            word_ids = word_ids[:(max_length - special_tokens_count)]
+            label_ids = label_ids[:(max_length - special_tokens_count)]
+
+        tokenized_inputs["input_ids"][-1] = tokenizer.build_inputs_with_special_tokens(tokenized_inputs["input_ids"][-1])
+        tokenized_inputs["attention_mask"].append(
+            [1] * len(tokenized_inputs["input_ids"][-1])
+        )
+        tokenized_inputs["labels"].append(
+            [-100] + label_ids + [-100]
+        )
+
+    return tokenized_inputs
+
 def tokenize_and_align_labels(dataset_unaligned, tokenizer, max_length, label_all_tokens=False, use_fast = True):
     tokenized_inputs = tokenizer(dataset_unaligned["tokens"], truncation=True, is_split_into_words=True, max_length=max_length)
     labels = []
     for i, label in enumerate(dataset_unaligned[f"ner_tags"]):
-        
-        word_ids = tokenized_inputs.word_ids(batch_index=i) if use_fast else tokenizer.convert_tokens_to_ids(tokenized_inputs.tokens(batch_index=i))
+        word_ids = tokenized_inputs.word_ids(batch_index=i)  
         previous_word_idx = None
         label_ids = []
         for word_idx in word_ids:
@@ -86,9 +123,12 @@ def process(data_dir, tokenizer, max_length, use_fast):
     )
     
     dataset = dataset.map(ds_features.encode_example, features=ds_features)
-
-    tokenized_datasets = dataset.map(tokenize_and_align_labels, 
-                fn_kwargs={'tokenizer': tokenizer, 'max_length':max_length, 'use_fast':use_fast}, batched=True)
+    
+    tokenized_datasets = dataset.map(
+        tokenize_and_align_labels if use_fast else tokenize_and_align_labels_slow, 
+        batched=True,
+        fn_kwargs={'tokenizer': tokenizer, 'max_length':max_length}, 
+    )
 
     return tokenized_datasets
 
