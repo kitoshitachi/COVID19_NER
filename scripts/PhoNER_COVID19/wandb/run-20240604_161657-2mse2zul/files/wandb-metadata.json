@@ -1,0 +1,54 @@
+{
+    "os": "Windows-10-10.0.19045-SP0",
+    "python": "3.9.12",
+    "heartbeatAt": "2024-06-04T09:16:58.680728",
+    "startedAt": "2024-06-04T09:16:57.580790",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--model_name",
+        "dslim/bert-base-NER",
+        "--batch_size",
+        "8",
+        "--data_dir",
+        "D:\\19521204\\python\\COVID19_NER\\data\\COVID19",
+        "--epochs",
+        "1"
+    ],
+    "state": "running",
+    "program": "D:\\19521204\\python\\COVID19_NER\\scripts\\PhoNER_COVID19\\run_bert.py",
+    "codePathLocal": "run_bert.py",
+    "codePath": "scripts\\PhoNER_COVID19\\run_bert.py",
+    "git": {
+        "remote": "https://github.com/kitoshitachi/COVID19_NER.git",
+        "commit": "3ef37f5b7427f9ae3f57ed570d88f7c1db798874"
+    },
+    "email": "19521204@gm.uit.edu.vn",
+    "root": "D:/19521204/python/COVID19_NER",
+    "host": "Vampire",
+    "username": "DELL",
+    "executable": "C:\\Users\\DELL\\anaconda3\\python.exe",
+    "cpu_count": 4,
+    "cpu_count_logical": 8,
+    "cpu_freq": {
+        "current": 1600.0,
+        "min": 0.0,
+        "max": 1800.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 1600.0,
+            "min": 0.0,
+            "max": 1800.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 931.5117149353027,
+            "used": 15.960552215576172
+        }
+    },
+    "memory": {
+        "total": 11.875144958496094
+    }
+}

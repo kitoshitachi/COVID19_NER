@@ -3,40 +3,66 @@ import evaluate
 from transformers import Trainer
 from seqeval.metrics import classification_report
 from seqeval.scheme import IOB2
+from seqeval.metrics.sequence_labeling import get_entities
 
-metric = evaluate.load('seqeval', trust_remote_code=True)
 type_entities = ['PATIENT_ID', 'NAME', 'GENDER', 'AGE', 'JOB', 'LOCATION',
                  'ORGANIZATION', 'DATE', 'SYMPTOM_AND_DISEASE', 'TRANSPORTATION']
 
 label_list = ['B-' + tag for tag in type_entities] + ['I-' + tag for tag in type_entities]
 
-def get_report(predictions, labels) -> tuple[dict]:
+
+def _ready_for_metrics(predictions, labels) -> tuple[dict]:
     # Remove ignored index (special tokens)
     true_predictions = [
-        [label_list[p] for (p, l) in zip(prediction, label) if l != -100]
+        [label_list[p] if l != -100 else 'O' for (p, l) in zip(prediction, label) ]
         for prediction, label in zip(predictions, labels)
     ]
     true_labels = [
-        [label_list[l] for (p, l) in zip(prediction, label) if l != -100]
+        [label_list[l] if l != -100 else 'O' for (p, l) in zip(prediction, label)]
         for prediction, label in zip(predictions, labels)
     ]
-    report_1 = classification_report(true_labels, true_predictions, digits = 4, zero_division=0, output_dict=True)
-    report_2 = classification_report(true_labels, true_predictions, digits = 4, zero_division=0, output_dict=True, scheme=IOB2)
-    return report_1, report_2
+    
+    true_predictions = map(get_entities, true_predictions)
+    true_labels = map(get_entities, true_labels)
+    
+    return true_predictions, true_labels
+
+def _compute_metrics(preds, golds):
+    tp = fp = fn = .0
+    n_total = 0
+
+    for pred, gold in zip(preds, golds):
+        gold_set = set(gold)
+        pred_set = set(pred)
+        
+        n_total += len(gold_set)
+        tp += len(gold_set & pred_set)  # True Positives
+        fn += len(gold_set - pred_set)  # False Negatives
+        fp += len(pred_set - gold_set)  # False Positives
+
+    tp, fn, fp, n_total
+
+
+    precision = 0 if tp + fp == 0 else 1.*tp / (tp + fp)
+    recall = 0 if tp + fn == 0 else 1.*tp / (tp + fn)
+    f1 = 0 if precision + recall == 0 else 2 * (precision * recall) / (precision + recall)
+    acc = tp / n_total
+    return {'precision': precision, 'recall': recall, 'f1': f1, "acc": acc}
 
 def compute_metrics(p):
+    
     predictions, labels = p
     predictions = np.argmax(predictions, axis=2)
-    report_1, report_2 = get_report(predictions, labels)
-    return {
-        'f1_macro':report_1['macro avg']['f1-score'],
-        'f1':report_1['weighted avg']['f1-score'],
-        'recall':report_1['weighted avg']['recall'],
-        'precision':report_1['weighted avg']['precision'],
-    }
+    
+    true_predictions, true_labels = _ready_for_metrics(predictions, labels)
+    
+    return _compute_metrics(true_predictions, true_labels)
 
 def predict(trainer:Trainer, ds, inference=False):
+    
     logits, labels, _ = trainer.predict(ds)
     predictions = np.argmax(logits, axis=2)
-
-    return get_report(predictions, labels)
+    
+    true_predictions, true_labels = _ready_for_metrics(predictions, labels)
+    
+    return _compute_metrics(true_predictions, true_labels)

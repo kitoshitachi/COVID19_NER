@@ -78,29 +78,18 @@ if __name__ == '__main__':
     )
 
     trainer.train()
-
-    dev_report_1, dev_report_2 = predict(trainer, dataset_dict['validation'])
-    dev_report_1_df = pd.DataFrame(dev_report_1).T
-    dev_report_2_df = pd.DataFrame(dev_report_2).T
+    
+    dev_report = predict(trainer, dataset_dict['validation'])
+    dev_report_df = pd.DataFrame.from_dict(dev_report, orient='index').T
     print("=========== DEV REPORT 1 =============")
-    print(dev_report_1_df)
-    print("\n\n=========== DEV REPORT 2 =============")
-    print(dev_report_2_df)
+    print(dev_report_df)
     
-    dev_report_1_df.to_csv(model_dir + '/report_dev_IOB1.csv')
-    dev_report_2_df.to_csv(model_dir + '/report_dev_IOB2.csv')
-
-    test_report_1, test_report_2 = predict(trainer, dataset_dict['test'], inference=False)
+    dev_report_df.to_csv(model_dir + '/report_dev.csv')
+    test_report = predict(trainer, dataset_dict['test'], inference=False)
     
-    test_report_1_df = pd.DataFrame(test_report_1).T
-    test_report_2_df = pd.DataFrame(test_report_2).T
+    test_report_df = pd.DataFrame(test_report, orient='index').T
     
     print("=========== TEST REPORT 1 =============")
-    print(test_report_1_df)
-    print("\n\n=========== TEST REPORT 2 =============")
-    
-    print(test_report_2_df)
-   
-    test_report_1_df.to_csv(model_dir + '/report_test_IOB1.csv')
-    test_report_2_df.to_csv(model_dir + '/report_test_IOB2.csv')
+    print(test_report_df)
+    test_report_df.to_csv(model_dir + '/report_test_IOB1.csv')
     
