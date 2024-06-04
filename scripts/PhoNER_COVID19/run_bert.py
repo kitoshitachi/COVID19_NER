@@ -1,6 +1,7 @@
 import os
-import argparse
+import wandb
 
+from utils.arguments import config
 from utils.data_utils import *
 from utils.eval_utils import *
 
@@ -12,70 +13,10 @@ from transformers import (
     DataCollatorForTokenClassification
     )
 from transformers.trainer_callback import EarlyStoppingCallback
-from seqeval.metrics import classification_report
-from seqeval.scheme import IOB2
+
 
 if __name__ == '__main__':
-    os.environ["WANDB_PROJECT"]="vampire_hunter"
-
-    # save your trained model checkpoint to wandb
-    os.environ["WANDB_LOG_MODEL"]="true"
-
-    # turn off watch to log faster
-    os.environ["WANDB_WATCH"]="false"
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--model_name',
-                        type=str,
-                        required=True)
-    parser.add_argument('--data_dir',
-                        type=str,
-                        required=True)
-    parser.add_argument('--max_length',
-                        type=int,
-                        default=256
-                        )
-    
-    parser.add_argument('--do_lower_case',
-                        action='store_true')
-    parser.add_argument('--batch_size',
-                        type=int,
-                        default=8)
-    parser.add_argument('--gradient_accumulation_steps',
-                        type=int,
-                        default=1)
-    parser.add_argument('--learning_rate',
-                        type=float,
-                        default=3e-5)
-    parser.add_argument('--epochs',
-                        type=int,
-                        default=5)
-    parser.add_argument('--weight_decay',
-                        type=float,
-                        default=0.1)
-    parser.add_argument('--warmup_ratio',
-                        type=float,
-                        default=0.1)
-    parser.add_argument('--warmup_steps',
-                        type=int,
-                        default=1000)
-    parser.add_argument('--save_total_limit',
-                        type=int,
-                        default=3)
-    parser.add_argument('--evaluation_strategy',
-                        type=str,
-                        default='epoch')
-    parser.add_argument('--logging_strategy',
-                        type=str,
-                        default='epoch')
-    parser.add_argument('--save_strategy',
-                        type=str,
-                        default='epoch')
-    
-    parser.add_argument('--metric_for_best_model',
-                    type=str,
-                    default='eval_f1')
-    
-    args = parser.parse_args()
+    args = config().parse_args()
     
     experiment_name = args.model_name.split('/')[-1]
 
@@ -140,21 +81,28 @@ if __name__ == '__main__':
 
     trainer.train()
 
-    dev_preds, dev_labels, dev_results = predict(trainer, dataset_dict['validation'])
-    dev_results.to_csv(os.path.join(model_dir, 'dev_results.csv'), index=False)
+    dev_report_1, dev_report_2 = predict(trainer, dataset_dict['validation'])
+    dev_report_1_df = pd.DataFrame(dev_report_1).T
+    dev_report_2_df = pd.DataFrame(dev_report_2).T
+    print("=========== DEV REPORT 1 =============")
+    print(dev_report_1_df)
+    print("\n\n=========== DEV REPORT 2 =============")
+    print(dev_report_2_df)
     
-    dev_report_1 = classification_report(dev_labels, dev_preds, zero_division=0, output_dict=True)
-    dev_report_2 = classification_report(dev_labels, dev_preds, zero_division=0, output_dict=True, scheme=IOB2)
-    
-    pd.DataFrame(dev_report_1).T.to_csv(model_dir + '/report_dev_IOB1.csv')
-    pd.DataFrame(dev_report_2).T.to_csv(model_dir + '/report_dev_IOB2.csv')
+    dev_report_1_df.to_csv(model_dir + '/report_dev_IOB1.csv')
+    dev_report_2_df.to_csv(model_dir + '/report_dev_IOB2.csv')
 
-    test_preds, test_labels, test_results = predict(trainer, dataset_dict['test'], inference=False)
-    test_results.to_csv(os.path.join(model_dir, 'test_results.csv'), index=False)
+    test_report_1, test_report_2 = predict(trainer, dataset_dict['test'], inference=False)
     
-    test_report_1 = classification_report(test_labels, test_preds, zero_division=0, output_dict=True)
-    test_report_2 = classification_report(test_labels, test_preds, zero_division=0, output_dict=True, scheme=IOB2)
-
-    pd.DataFrame(test_report_1).T.to_csv(model_dir + '/report_test_IOB1.csv')
-    pd.DataFrame(test_report_2).T.to_csv(model_dir + '/report_test_IOB2.csv')
+    test_report_1_df = pd.DataFrame(test_report_1).T
+    test_report_2_df = pd.DataFrame(test_report_2).T
+    
+    print("=========== TEST REPORT 1 =============")
+    print(test_report_1_df)
+    print("\n\n=========== TEST REPORT 2 =============")
+    
+    print(test_report_2_df)
+   
+    test_report_1_df.to_csv(model_dir + '/report_test_IOB1.csv')
+    test_report_2_df.to_csv(model_dir + '/report_test_IOB2.csv')
     

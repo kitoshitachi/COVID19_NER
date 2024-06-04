@@ -66,11 +66,11 @@ def process(data_dir, tokenizer, max_length):
     dev_df.rename(columns=mapping_column_names, inplace=True)
     test_df.rename(columns=mapping_column_names, inplace=True)
 
-    train_ds = Dataset.from_pandas(train_df)
-    dev_ds = Dataset.from_pandas(dev_df)
-    test_ds = Dataset.from_pandas(test_df)
+    train_ds = Dataset.from_pandas(train_df.head(50))
+    dev_ds = Dataset.from_pandas(dev_df.head(50))
+    test_ds = Dataset.from_pandas(test_df.head(50))
 
-    label_list = sorted(list(set(tag for doc in train_ds['ner_tags'] for tag in doc)))
+    label_list = sorted(list(set(tag for doc in train_df['ner_tags'] for tag in doc)))
 
     train_features = datasets.Features(
         {
@@ -107,7 +107,7 @@ def process(data_dir, tokenizer, max_length):
     return tokenized_datasets
 
 
-# if __name__ == '__main__':
-#     from transformers import AutoTokenizer
-#     tokenizer = AutoTokenizer.from_pretrained('neuralmind/bert-base-portuguese-cased', do_lower_case=True, token='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')
-#     print(process('D:/19521204\python\ABSAPT2024_Solutions\data', tokenizer, 256))
+if __name__ == '__main__':
+    from transformers import AutoTokenizer
+    tokenizer = AutoTokenizer.from_pretrained('neuralmind/bert-base-portuguese-cased', do_lower_case=True, token='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')
+    print(process('D:/19521204\python\COVID19_NER\data\COVID19', tokenizer, 256))

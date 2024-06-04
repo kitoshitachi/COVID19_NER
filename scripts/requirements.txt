@@ -1,6 +1,5 @@
-datasets==2.10.1
-evaluate==0.4.1
-numpy==1.23.1
-pandas==1.4.1
-seqeval==1.2.2
-transformers==4.38.0
+datasets
+evaluate
+pandas
+seqeval
+transformers

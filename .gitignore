@@ -162,3 +162,5 @@ cython_debug/
 #.idea/
 
 run_bert.ipynb
+
+.vscode
