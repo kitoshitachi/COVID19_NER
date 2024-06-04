@@ -22,9 +22,15 @@ def _ready_for_metrics(predictions, labels) -> tuple[dict]:
         for prediction, label in zip(predictions, labels)
     ]
     
-    true_predictions = map(lambda x: '#'.join(get_entities(x)), true_predictions)
-    true_labels = map(lambda x: '#'.join(get_entities(x)), true_labels)
     
+    true_predictions = [
+        [f'{entity}#{start}#{end}' for entity, start, end in get_entities(predictions)] 
+        for predictions in true_predictions
+    ]
+    true_labels = [
+        [f'{entity}#{start}#{end}' for entity, start, end in get_entities(labels)] 
+        for labels in true_labels
+    ]
     return true_predictions, true_labels
 
 def _compute_metrics(preds, golds):
@@ -63,3 +69,5 @@ def predict(trainer:Trainer, ds, inference=False):
     true_predictions, true_labels = _ready_for_metrics(predictions, labels)
     
     return _compute_metrics(true_predictions, true_labels)
+
+
