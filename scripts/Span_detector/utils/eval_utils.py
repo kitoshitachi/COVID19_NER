@@ -6,7 +6,7 @@ from seqeval.scheme import IOB2
 from seqeval.metrics.sequence_labeling import get_entities
 
 
-label_list = ['B','I']
+label_list = ['B', 'I', 'O']
 
 def _ready_for_metrics(predictions, labels) -> tuple[dict]:
     # Remove ignored index (special tokens)

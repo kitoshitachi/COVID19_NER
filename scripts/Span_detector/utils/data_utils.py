@@ -4,6 +4,8 @@ import pandas as pd
 import datasets
 from datasets import Dataset, DatasetDict
 
+label_list = ['B', 'I', 'O']
+
 def tokenize_and_align_labels_slow(dataset_unaligned, tokenizer, max_length, label_all_tokens=False):
 
     tokenized_inputs = {"input_ids": [], "attention_mask": [], "labels": []}
@@ -69,7 +71,6 @@ def tokenize_and_align_labels(dataset_unaligned, tokenizer, max_length, label_al
     return tokenized_inputs
 
 def build_ds_stage_1(data):
-
     return {'ner_tags':[
         [tag.split('-')[0] for tag in tags] 
         for tags in data
@@ -97,7 +98,6 @@ def process(data_dir, tokenizer, max_length, use_fast):
         batched=True, 
         input_columns=['ner_tags'],
     )
-    label_list = sorted(list(set(tag for doc in dataset['train']['ner_tags'] for tag in doc)))
 
     ds_features = datasets.Features(
         {
