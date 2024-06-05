@@ -4,6 +4,11 @@ import pandas as pd
 import datasets
 from datasets import Dataset, DatasetDict
 
+type_entities = ['PATIENT_ID', 'NAME', 'GENDER', 'AGE', 'JOB', 'LOCATION',
+                 'ORGANIZATION', 'DATE', 'SYMPTOM_AND_DISEASE', 'TRANSPORTATION']
+
+label_list = ['B-' + tag for tag in type_entities] + ['I-' + tag for tag in type_entities] + ['O']
+
 def tokenize_and_align_labels_slow(dataset_unaligned, tokenizer, max_length, label_all_tokens=False):
 
     tokenized_inputs = {"input_ids": [], "attention_mask": [], "labels": []}
@@ -138,5 +143,5 @@ def process(data_dir, tokenizer, max_length, use_fast):
 
 if __name__ == '__main__':
     from transformers import AutoTokenizer
-    tokenizer = AutoTokenizer.from_pretrained('vinai/phobert-base-v2', do_lower_case=True, token='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', use_fast = False)
+    tokenizer = AutoTokenizer.from_pretrained('vinai/phobert-base-v2', do_lower_case=True, use_fast = False)
     print(process('D:/19521204\python\COVID19_NER\data\COVID19', tokenizer, 256, use_fast=False))

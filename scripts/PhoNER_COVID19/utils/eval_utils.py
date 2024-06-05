@@ -1,14 +1,11 @@
 import numpy as np
-import evaluate
 from transformers import Trainer
-from seqeval.metrics import classification_report
-from seqeval.scheme import IOB2
 from seqeval.metrics.sequence_labeling import get_entities
 
 type_entities = ['PATIENT_ID', 'NAME', 'GENDER', 'AGE', 'JOB', 'LOCATION',
                  'ORGANIZATION', 'DATE', 'SYMPTOM_AND_DISEASE', 'TRANSPORTATION']
 
-label_list = ['B-' + tag for tag in type_entities] + ['I-' + tag for tag in type_entities]
+label_list = ['B-' + tag for tag in type_entities] + ['I-' + tag for tag in type_entities] + ['O']
 
 
 def _ready_for_metrics(predictions, labels) -> tuple[dict]:
