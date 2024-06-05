@@ -54,7 +54,8 @@ if __name__ == '__main__':
         metric_for_best_model = metric_for_best_model,
         greater_is_better = greater_is_better,
         load_best_model_at_end=True,
-        # push_to_hub=True,
+        push_to_hub=True,
+        disable_tqdm=True
     )
 
     data_collator = DataCollatorForTokenClassification(tokenizer)
