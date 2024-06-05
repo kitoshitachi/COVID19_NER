@@ -1,12 +1,9 @@
 import numpy as np
-import evaluate
 from transformers import Trainer
-from seqeval.metrics import classification_report
-from seqeval.scheme import IOB2
 from seqeval.metrics.sequence_labeling import get_entities
 
 
-label_list = ['B', 'I', 'O']
+label_list = ['B-ENTITY', 'I-ENTITY', 'O']
 
 def _ready_for_metrics(predictions, labels):
     # Remove ignored index (special tokens)

@@ -77,7 +77,7 @@ if __name__ == '__main__':
         callbacks=[EarlyStoppingCallback(early_stopping_patience=early_stopping_patience)],
     )
 
-    trainer.train()
+    # trainer.train()
     
     dev_report, dev_pred = predict(trainer, dataset_dict['validation'])
     dev_report_df = pd.DataFrame.from_dict(dev_report, orient='index').T
