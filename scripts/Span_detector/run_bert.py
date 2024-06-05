@@ -42,6 +42,7 @@ if __name__ == '__main__':
     training_args = TrainingArguments(
         output_dir=output_dir,
         report_to="wandb",
+        run_name=experiment_name,
         learning_rate=args.learning_rate,
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
@@ -52,7 +53,7 @@ if __name__ == '__main__':
         evaluation_strategy=args.evaluation_strategy,
         logging_strategy=args.logging_strategy,
         save_strategy=args.save_strategy,
-        save_total_limit = args.save_total_limit + 2,
+        save_total_limit = args.save_total_limit,
         log_level="error",
         metric_for_best_model = metric_for_best_model,
         greater_is_better = greater_is_better,
@@ -86,7 +87,7 @@ if __name__ == '__main__':
     print(dev_report_df)
     
     dev_report_df.to_csv(model_dir + '/report_dev.csv')
-    pd.DataFrame(dev_pred).to_csv('dev_predictions.csv')
+    pd.DataFrame(dev_pred).to_csv(model_dir + '/dev_predictions.csv')
     
     test_report, test_pred = predict(trainer, dataset_dict['test'], inference=False)
     test_report_df = pd.DataFrame.from_dict(test_report, orient='index').T
@@ -95,6 +96,6 @@ if __name__ == '__main__':
     print(test_report_df)
     
     test_report_df.to_csv(model_dir + '/report_test_IOB1.csv')
-    pd.DataFrame(test_pred).to_csv('test_predictions.csv')
+    pd.DataFrame(test_pred).to_csv(model_dir + '/test_predictions.csv')
     
     
