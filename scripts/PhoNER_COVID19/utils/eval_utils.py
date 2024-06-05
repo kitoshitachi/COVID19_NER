@@ -68,8 +68,33 @@ def predict(trainer:Trainer, ds, inference=False):
 
 from transformers import ProgressCallback
 class ProgressOverider(ProgressCallback):
-    def on_prediction_step(self, args, state, control, eval_dataloader=None, **kwargs):
+    def __init__(self):
+        super().__init__()
+        self.train_bar = None
+        self.eval_bar = None
+
+    def on_train_begin(self, args, state, control, **kwargs):
+        if state.is_world_process_zero:
+            self.train_bar = tqdm(total=state.max_steps, dynamic_ncols=True, desc="Training")
+
+    def on_train_end(self, args, state, control, **kwargs):
+        if self.train_bar is not None:
+            self.train_bar.close()
+            self.train_bar = None
+
+    def on_step_end(self, args, state, control, **kwargs):
+        if state.is_world_process_zero and self.train_bar is not None:
+            self.train_bar.update(1)
+
+    def on_evaluate(self, args, state, control, **kwargs):
+        if self.eval_bar is not None:
+            self.eval_bar.close()
+            self.eval_bar = None
+
+    def on_evaluation_begin(self, args, state, control, eval_dataloader=None, **kwargs):
         if state.is_world_process_zero and eval_dataloader is not None and hasattr(eval_dataloader, '__len__'):
-            if self.prediction_bar is None:
-                self.prediction_bar = tqdm(total=len(eval_dataloader), dynamic_ncols=True)
-            self.prediction_bar.update(1)
+            self.eval_bar = tqdm(total=len(eval_dataloader), dynamic_ncols=True, desc="Evaluating")
+
+    def on_prediction_step(self, args, state, control, eval_dataloader=None, **kwargs):
+        if state.is_world_process_zero and self.eval_bar is not None:
+            self.eval_bar.update(1)

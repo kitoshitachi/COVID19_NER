@@ -87,9 +87,10 @@ class ProgressOverider(ProgressCallback):
             self.eval_bar.close()
             self.eval_bar = None
 
-    def on_prediction_step(self, args, state, control, eval_dataloader=None, **kwargs):
+    def on_evaluation_begin(self, args, state, control, eval_dataloader=None, **kwargs):
         if state.is_world_process_zero and eval_dataloader is not None and hasattr(eval_dataloader, '__len__'):
-            if self.eval_bar is None:
-                self.eval_bar = tqdm(total=len(eval_dataloader), dynamic_ncols=True, desc="Evaluating")
+            self.eval_bar = tqdm(total=len(eval_dataloader), dynamic_ncols=True, desc="Evaluating")
+
+    def on_prediction_step(self, args, state, control, eval_dataloader=None, **kwargs):
+        if state.is_world_process_zero and self.eval_bar is not None:
             self.eval_bar.update(1)
-    
