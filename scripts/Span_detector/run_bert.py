@@ -89,7 +89,7 @@ if __name__ == '__main__':
     print(dev_report_df)
     
     dev_report_df.to_csv(model_dir + '/report_dev.csv')
-    pd.DataFrame(dev_pred).to_csv(model_dir + '/dev_predictions.csv')
+    pd.DataFrame(dev_pred).to_csv('dev_predictions.csv')
     
     test_report, test_pred = predict(trainer, dataset_dict['test'], inference=False)
     test_report_df = pd.DataFrame.from_dict(test_report, orient='index').T
@@ -98,6 +98,6 @@ if __name__ == '__main__':
     print(test_report_df)
     
     test_report_df.to_csv(model_dir + '/report_test_IOB1.csv')
-    pd.DataFrame(test_pred).to_csv(model_dir + '/test_predictions.csv')
+    pd.DataFrame(test_pred).to_csv('test_predictions.csv')
     
     
