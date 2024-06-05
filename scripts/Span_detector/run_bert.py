@@ -24,11 +24,9 @@ if __name__ == '__main__':
         os.makedirs(model_dir)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, do_lower_case=args.do_lower_case, use_fast=args.use_fast, add_prefix_space=args.add_prefix_space)
 
-    model = AutoModelForTokenClassification.from_pretrained(args.model_name, num_labels=len(label_list), ignore_mismatched_sizes=True)
+    model = AutoModelForTokenClassification.from_pretrained(args.model_name, num_labels=len(label_list), ignore_mismatched_sizes=args.ignore_mismatched_sizes)
     
     dataset_dict = process(args.data_dir, tokenizer, args.max_length, args.use_fast)
-    
-    load_best_model_at_end = True
     
     output_dir = model_dir + '/results'
     # get best model through a metric
@@ -47,26 +45,19 @@ if __name__ == '__main__':
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
         num_train_epochs=args.epochs,
-        # warmup_ratio=args.warmup_ratio,
         weight_decay=args.weight_decay,
         warmup_steps=args.warmup_steps,
-        evaluation_strategy=args.evaluation_strategy,
-        logging_strategy=args.logging_strategy,
-        save_strategy=args.save_strategy,
-        save_total_limit = args.save_total_limit,
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        logging_strategy='epoch',
         log_level="error",
         metric_for_best_model = metric_for_best_model,
         greater_is_better = greater_is_better,
         load_best_model_at_end=True,
-        gradient_checkpointing=False,
-        do_train=True,
-        do_eval=True,
-        disable_tqdm=True, 
+        # push_to_hub=True,
     )
 
     data_collator = DataCollatorForTokenClassification(tokenizer)
-
-    early_stopping_patience = args.save_total_limit
 
     trainer = Trainer(
         model,
@@ -76,14 +67,14 @@ if __name__ == '__main__':
         data_collator=data_collator,
         tokenizer=tokenizer,
         compute_metrics=compute_metrics,
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=early_stopping_patience), ProgressOverider()],
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
     )
     trainer.train()
     
     dev_report, dev_pred = predict(trainer, dataset_dict['validation'])
     dev_report_df = pd.DataFrame.from_dict(dev_report, orient='index').T
     
-    print("=========== DEV REPORT 1 =============")
+    print("\n=========== DEV REPORT =============")
     print(dev_report_df)
     
     dev_report_df.to_csv(model_dir + '/report_dev.csv')
@@ -92,7 +83,7 @@ if __name__ == '__main__':
     test_report, test_pred = predict(trainer, dataset_dict['test'], inference=False)
     test_report_df = pd.DataFrame.from_dict(test_report, orient='index').T
     
-    print("=========== TEST REPORT 1 =============")
+    print("\n=========== TEST REPORT =============")
     print(test_report_df)
     
     test_report_df.to_csv(model_dir + '/report_test_IOB1.csv')

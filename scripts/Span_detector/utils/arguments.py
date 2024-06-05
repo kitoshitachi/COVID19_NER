@@ -38,7 +38,7 @@ def config():
                         default=1000)
     parser.add_argument('--save_total_limit',
                         type=int,
-                        default=3)
+                        default=1)
     parser.add_argument('--evaluation_strategy',
                         type=str,
                         default='epoch')
@@ -58,4 +58,6 @@ def config():
     
     parser.add_argument('--add_prefix_space',
             action='store_true')
+    parser.add_argument('--ignore_mismatched_sizes',
+        action='store_true')
     return parser
