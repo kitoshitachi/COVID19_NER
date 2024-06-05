@@ -1,4 +1,5 @@
 import numpy as np
+import tqdm
 from transformers import Trainer
 from seqeval.metrics.sequence_labeling import get_entities
 
@@ -68,3 +69,10 @@ def predict(trainer:Trainer, ds, inference=False):
     return _compute_metrics(true_predictions, true_labels)
 
 
+from transformers import ProgressCallback
+class ProgressOverider(ProgressCallback):
+    def on_prediction_step(self, args, state, control, eval_dataloader=None, **kwargs):
+        if state.is_world_process_zero and eval_dataloader is not None and hasattr(eval_dataloader, '__len__'):
+            if self.prediction_bar is None:
+                self.prediction_bar = tqdm(total=len(eval_dataloader), dynamic_ncols=True)
+            self.prediction_bar.update(1)

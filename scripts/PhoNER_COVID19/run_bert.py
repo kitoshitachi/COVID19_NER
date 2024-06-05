@@ -76,7 +76,10 @@ if __name__ == '__main__':
         compute_metrics=compute_metrics,
         callbacks=[EarlyStoppingCallback(early_stopping_patience=early_stopping_patience)],
     )
-
+    progress_callback = next(filter(lambda x: isinstance(x, ProgressCallback), trainer.callback_handler.callbacks),
+                                 None)
+    trainer.remove_callback(progress_callback)
+    trainer.add_callback(ProgressOverider)
     trainer.train()
     
     dev_report = predict(trainer, dataset_dict['validation'])
