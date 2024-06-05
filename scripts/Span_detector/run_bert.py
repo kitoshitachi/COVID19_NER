@@ -60,6 +60,7 @@ if __name__ == '__main__':
         gradient_checkpointing=False,
         do_train=True,
         do_eval=True,
+        disable_tqdm=True, 
     )
 
     data_collator = DataCollatorForTokenClassification(tokenizer)
@@ -74,12 +75,8 @@ if __name__ == '__main__':
         data_collator=data_collator,
         tokenizer=tokenizer,
         compute_metrics=compute_metrics,
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=early_stopping_patience)],
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=early_stopping_patience), ProgressOverider()],
     )
-    progress_callback = next(filter(lambda x: isinstance(x, ProgressCallback), trainer.callback_handler.callbacks),
-                                 None)
-    trainer.remove_callback(progress_callback)
-    trainer.add_callback(ProgressOverider)
     trainer.train()
     
     dev_report, dev_pred = predict(trainer, dataset_dict['validation'])

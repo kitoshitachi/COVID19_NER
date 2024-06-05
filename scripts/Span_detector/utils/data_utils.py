@@ -88,9 +88,9 @@ def process(data_dir, tokenizer, max_length, use_fast):
         'tags': 'ner_tags'
     }
     dataset = DatasetDict({
-        'train': Dataset.from_pandas(train_df),
-        'validation': Dataset.from_pandas(dev_df),
-        'test': Dataset.from_pandas(test_df)
+        'train': Dataset.from_pandas(train_df.head(10)),
+        'validation': Dataset.from_pandas(dev_df.head(10)),
+        'test': Dataset.from_pandas(test_df.head(10))
     })
     dataset = dataset.rename_columns(mapping_column_names)
     dataset = dataset.map(
