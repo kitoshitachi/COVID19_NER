@@ -79,17 +79,22 @@ if __name__ == '__main__':
 
     trainer.train()
     
-    dev_report = predict(trainer, dataset_dict['validation'])
+    dev_report, dev_pred = predict(trainer, dataset_dict['validation'])
     dev_report_df = pd.DataFrame.from_dict(dev_report, orient='index').T
+    
     print("=========== DEV REPORT 1 =============")
     print(dev_report_df)
     
     dev_report_df.to_csv(model_dir + '/report_dev.csv')
-    test_report = predict(trainer, dataset_dict['test'], inference=False)
+    pd.DataFrame(dev_pred).to_csv(model_dir + '/dev_predictions.csv')
     
+    test_report, test_pred = predict(trainer, dataset_dict['test'], inference=False)
     test_report_df = pd.DataFrame.from_dict(test_report, orient='index').T
     
     print("=========== TEST REPORT 1 =============")
     print(test_report_df)
+    
     test_report_df.to_csv(model_dir + '/report_test_IOB1.csv')
+    pd.DataFrame(test_pred).to_csv(model_dir + '/test_predictions.csv')
+    
     

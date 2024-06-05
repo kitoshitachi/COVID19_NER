@@ -8,7 +8,7 @@ from seqeval.metrics.sequence_labeling import get_entities
 
 label_list = ['B', 'I', 'O']
 
-def _ready_for_metrics(predictions, labels) -> tuple[dict]:
+def _ready_for_metrics(predictions, labels):
     # Remove ignored index (special tokens)
     true_predictions = [
         [label_list[p] if l != -100 else 'O' for (p, l) in zip(prediction, label) ]
@@ -30,7 +30,7 @@ def _ready_for_metrics(predictions, labels) -> tuple[dict]:
     ]
     return true_predictions, true_labels
 
-def _compute_metrics(preds, golds):
+def _compute_metrics(preds, golds) -> tuple[dict]:
     tp = fp = fn = .0
     n_total = 0
 
@@ -65,6 +65,6 @@ def predict(trainer:Trainer, ds, inference=False):
     
     true_predictions, true_labels = _ready_for_metrics(predictions, labels)
     
-    return _compute_metrics(true_predictions, true_labels)
+    return _compute_metrics(true_predictions, true_labels), true_predictions
 
 
