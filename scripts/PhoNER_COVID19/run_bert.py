@@ -36,31 +36,27 @@ if __name__ == '__main__':
     if metric_for_best_model == 'eval_loss':
         greater_is_better = False
     else:
-        metric_for_best_model = 'eval_f1'
+        metric_for_best_model = 'eval_f1_micro'
         greater_is_better = True
         
     training_args = TrainingArguments(
         output_dir=output_dir,
         report_to="wandb",
         run_name=experiment_name,
-        learning_rate=args.learning_rate,
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
         num_train_epochs=args.epochs,
-        # warmup_ratio=args.warmup_ratio,
-        weight_decay=args.weight_decay,
-        warmup_steps=args.warmup_steps,
-        evaluation_strategy=args.evaluation_strategy,
-        logging_strategy=args.logging_strategy,
-        save_strategy=args.save_strategy,
-        save_total_limit = args.save_total_limit + 2,
+        evaluation_strategy='epoch',
+        logging_strategy='no',
+        save_strategy='epoch',
         log_level="error",
-        metric_for_best_model = metric_for_best_model,
-        greater_is_better = greater_is_better,
+        metric_for_best_model = 'eval_f1_micro',
+        greater_is_better = True,
         load_best_model_at_end=True,
         gradient_checkpointing=False,
-        do_train=True,
-        do_eval=True,
+        # do_train=True,
+        # do_eval=True,
+        
     )
 
     data_collator = DataCollatorForTokenClassification(tokenizer)
@@ -75,25 +71,28 @@ if __name__ == '__main__':
         data_collator=data_collator,
         tokenizer=tokenizer,
         compute_metrics=compute_metrics,
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=early_stopping_patience)],
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=early_stopping_patience), PandasEvaluationCallback()],
     )
-    progress_callback = next(filter(lambda x: isinstance(x, ProgressCallback), trainer.callback_handler.callbacks),
-                                 None)
-    trainer.remove_callback(progress_callback)
-    trainer.add_callback(ProgressOverider)
+
     trainer.train()
     
-    dev_report = predict(trainer, dataset_dict['validation'])
-    dev_report_df = pd.DataFrame.from_dict(dev_report, orient='index').T
+    dev_preds, dev_report = predict(trainer, dataset_dict['validation'])
+    # dataset_dict['validation']['predictions'] = dev_preds
+    test_preds, test_report = predict(trainer, dataset_dict['test'], inference=False)
+    
     print("=========== DEV REPORT 1 =============")
-    print(dev_report_df)
-    
-    dev_report_df.to_csv(model_dir + '/report_dev.csv')
-    test_report = predict(trainer, dataset_dict['test'], inference=False)
-    
-    test_report_df = pd.DataFrame.from_dict(test_report, orient='index').T
-    
+    print(dev_report)
     print("=========== TEST REPORT 1 =============")
-    print(test_report_df)
-    test_report_df.to_csv(model_dir + '/report_test_IOB1.csv')
+    print(test_report)
+    
+    with open(model_dir + '/report.csv', 'w+', encoding='utf-8') as f:
+        f.write("=========== DEV REPORT 1 =============\n\n"+ 
+                dev_report +  
+                "\n\n=========== TEST REPORT 1 =============\n\n" +
+                test_report
+        )
+
+    with open(model_dir + '/predictions.csv', 'w+', encoding='utf-8') as f:
+        for pred in test_preds:
+            f.write(" ".join(pred) + '\n')
     

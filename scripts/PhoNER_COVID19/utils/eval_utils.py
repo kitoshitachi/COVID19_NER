@@ -1,7 +1,6 @@
 import numpy as np
-import tqdm
 from transformers import Trainer
-from seqeval.metrics.sequence_labeling import get_entities
+from seqeval.metrics import classification_report
 
 type_entities = ['PATIENT_ID', 'NAME', 'GENDER', 'AGE', 'JOB', 'LOCATION',
                  'ORGANIZATION', 'DATE', 'SYMPTOM_AND_DISEASE', 'TRANSPORTATION']
@@ -9,7 +8,7 @@ type_entities = ['PATIENT_ID', 'NAME', 'GENDER', 'AGE', 'JOB', 'LOCATION',
 label_list = ['B-' + tag for tag in type_entities] + ['I-' + tag for tag in type_entities] + ['O']
 
 
-def _ready_for_metrics(predictions, labels) -> tuple[dict]:
+def _ready_for_metrics(predictions, labels):
     # Remove ignored index (special tokens)
     true_predictions = [
         [label_list[p] if l != -100 else 'O' for (p, l) in zip(prediction, label) ]
@@ -20,81 +19,49 @@ def _ready_for_metrics(predictions, labels) -> tuple[dict]:
         for prediction, label in zip(predictions, labels)
     ]
     
-    
-    true_predictions = [
-        [f'{entity}#{start}#{end}' for entity, start, end in get_entities(predictions)] 
-        for predictions in true_predictions
-    ]
-    true_labels = [
-        [f'{entity}#{start}#{end}' for entity, start, end in get_entities(labels)] 
-        for labels in true_labels
-    ]
     return true_predictions, true_labels
 
-def _compute_metrics(preds, golds) -> tuple[dict]:
-    tp = fp = fn = .0
-
-    for pred, gold in zip(preds, golds):
-        gold_set = set(gold)
-        pred_set = set(pred)
-        
-        tp += len(gold_set & pred_set)  # True Positives
-        fn += len(gold_set - pred_set)  # False Negatives
-        fp += len(pred_set - gold_set)  # False Positives
-
-    precision = 0 if tp + fp == 0 else 1.*tp / (tp + fp)
-    recall = 0 if tp + fn == 0 else 1.*tp / (tp + fn)
-    f1 = 0 if precision + recall == 0 else 2 * (precision * recall) / (precision + recall)
-    return {'precision': precision, 'recall': recall, 'f1': f1}
-
 def compute_metrics(p):
-    
     predictions, labels = p
     predictions = np.argmax(predictions, axis=2)
     
-    true_predictions, true_labels = _ready_for_metrics(predictions, labels)
+    true_labels, true_predictions = _ready_for_metrics(predictions, labels)
     
-    return _compute_metrics(true_predictions, true_labels)
+    report = classification_report(true_labels, true_predictions, digits = 4, zero_division=0, output_dict=True)
+    result = {entity: report[entity]['f1-score'] for entity in type_entities}
+    result['f1_macro'] = report['macro avg']['f1-score']
+    result['f1_micro'] = report['micro avg']['f1-score']
+    
+    return result
 
 def predict(trainer:Trainer, ds, inference=False):
-    
     logits, labels, _ = trainer.predict(ds)
     predictions = np.argmax(logits, axis=2)
     
-    true_predictions, true_labels = _ready_for_metrics(predictions, labels)
+    true_labels, true_predictions = _ready_for_metrics(predictions, labels)
     
-    return _compute_metrics(true_predictions, true_labels)
+    report = classification_report(true_labels, true_predictions, digits = 4, zero_division=0)
+    return true_predictions, report
 
 
-from transformers import ProgressCallback
-class ProgressOverider(ProgressCallback):
+import pandas as pd
+from transformers import TrainerCallback
+class PandasEvaluationCallback(TrainerCallback):
     def __init__(self):
-        super().__init__()
-        self.train_bar = None
-        self.eval_bar = None
+        self.results_df = pd.DataFrame()  # Initialize empty DataFrame
 
-    def on_train_begin(self, args, state, control, **kwargs):
+    def on_evaluate(self, args, state, control, metrics:dict[str,float], **kwargs):
         if state.is_world_process_zero:
-            self.train_bar = tqdm(total=state.max_steps, dynamic_ncols=True, desc="Training")
+            # Create a DataFrame for the current evaluation results
+            metrics_df = pd.DataFrame(metrics, index=[0])
+            metrics_df.columns = metrics_df.columns.str.replace("eval_", "", regex=False)
+            metrics_df = metrics_df.round(4)
+            
+            # Add current epoch and step (if applicable)
+            metrics_df["epoch"] = state.epoch 
+            # Append the current results to the overall DataFrame
+            self.results_df = pd.concat([self.results_df, metrics_df], ignore_index=True)
 
-    def on_train_end(self, args, state, control, **kwargs):
-        if self.train_bar is not None:
-            self.train_bar.close()
-            self.train_bar = None
-
-    def on_step_end(self, args, state, control, **kwargs):
-        if state.is_world_process_zero and self.train_bar is not None:
-            self.train_bar.update(1)
-
-    def on_evaluate(self, args, state, control, **kwargs):
-        if self.eval_bar is not None:
-            self.eval_bar.close()
-            self.eval_bar = None
-
-    def on_evaluation_begin(self, args, state, control, eval_dataloader=None, **kwargs):
-        if state.is_world_process_zero and eval_dataloader is not None and hasattr(eval_dataloader, '__len__'):
-            self.eval_bar = tqdm(total=len(eval_dataloader), dynamic_ncols=True, desc="Evaluating")
-
-    def on_prediction_step(self, args, state, control, eval_dataloader=None, **kwargs):
-        if state.is_world_process_zero and self.eval_bar is not None:
-            self.eval_bar.update(1)
+            # Display the updated DataFrame
+            print(f"Evaluation Results:")
+            print(self.results_df.set_index('epoch')[['loss', 'f1_macro', 'f1_micro'] + type_entities])
